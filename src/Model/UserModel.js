@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema(
         },
         Verification: {
             user: {
-                UserOTP: { type: String, default: null },
+                UserOTP: { type: String, default: 0 },
                 isDeleted: { type: Boolean, default: false },
                 isVerify: { type: Boolean, default: false },
                 isOtpVerified: { type: String, default: 0 },
@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema(
             },
             admin: {
                 isAccountActive: { type: Boolean, default: true },
-                AdminOTP: { type: String, default: null },
+                AdminOTP: { type: String, default: 0 },
                 isOtpVerified: { type: String, default: 0 },
 
             }

@@ -100,8 +100,7 @@ exports.LogInUser = async (req, res) => {
         const data = req.body
         const { email, password } = data
 
-        const CheckUser = await UserModel.findOne({ email: email })
-        console.log(CheckUser.password); 
+        const CheckUser = await UserModel.findOne({ email: email , role:"user"})
 
         if (!CheckUser) return res.status(400).send({ status: false, msg: "User Not Found" })
 
