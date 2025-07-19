@@ -55,7 +55,7 @@ exports.LogInAdmin = async (req, res) => {
                 token,
                 id: user._id
             }
-        });
+        })
 
     } catch (e) {
         errorHandlingdata(e, res);
@@ -64,6 +64,7 @@ exports.LogInAdmin = async (req, res) => {
 
 exports.getAllUserData = async (req, res) => {
     try {
+
         const type = req.params.type
         const isDeleted = req.params.isDeleted
         if (type == 'all') {

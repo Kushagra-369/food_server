@@ -10,7 +10,7 @@ exports.createuser = async (req, res) => {
     try {
         const data = req.body;
 
-        if (Object.keys(data).length === 0) { return res.status(400).send({ status: false, msg: "A value is required in this field."}); }
+        if (Object.keys(data).length === 0) { return res.status(400).send({ status: false, msg: "A value is required in this field." }); }
 
         const randomOTP = Math.floor(1000 + Math.random() * 9000)
 
@@ -100,18 +100,18 @@ exports.LogInUser = async (req, res) => {
         const data = req.body
         const { email, password } = data
 
-        const CheckUser = await UserModel.findOne({ email: email , role:"user"})
+        const CheckUser = await UserModel.findOne({ email: email, role: "user" })
 
         if (!CheckUser) return res.status(400).send({ status: false, msg: "User Not Found" })
 
         const userVerification = CheckUser.Verification?.user || {};
         const adminVerification = CheckUser.Verification?.admin || {};
 
-        const comparePass = await bcrypt.compare(password , CheckUser.password)
+        const comparePass = await bcrypt.compare(password, CheckUser.password)
         console.log(comparePass);
-        if(!comparePass) return res.status(400).send({status:false,  msg:"Wrong Password"})
+        if (!comparePass) return res.status(400).send({ status: false, msg: "Wrong Password" })
 
-           if (CheckUser) {
+        if (CheckUser) {
             console.log(CheckUser);
             const DBDATABASE = { name: CheckUser.name, email: CheckUser.email, _id: CheckUser._id }
 
@@ -121,11 +121,11 @@ exports.LogInUser = async (req, res) => {
             const { isDeleted, isVerify, isAccountActive } = userVerification
             if (userVerification.isDeleted) return res.status(400).send({ status: false, msg: 'User already deleted' });
             if (!userVerification.isVerify) return res.status(400).send({ status: false, msg: ' please verify your OTP' });
-            if (!adminVerification.isAccountActive) return res.status(400).send({ status: false, msg: 'User is blocked by admin' });          
+            if (!adminVerification.isAccountActive) return res.status(400).send({ status: false, msg: 'User is blocked by admin' });
         }
 
-        const token = jwt.sign({userId : CheckUser._id} , process.env.JWT_User_SECRET_KEY , { expiresIn : '24h'})
-        return res.status(200).send({status:true , msg:"Login Successfully" , data:{token ,id: CheckUser._id}})
+        const token = jwt.sign({ userId: CheckUser._id }, process.env.JWT_User_SECRET_KEY, { expiresIn: '24h' })
+        return res.status(200).send({ status: true, msg: "Login Successfully", data: { token, id: CheckUser._id } })
     }
 
     catch (e) {
@@ -147,6 +147,134 @@ exports.getUserById = async (req, res) => {
     catch (e) { res.status(500).send({ status: false, msg: e.message }) }
 }
 
+exports.ResendOTP = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const user = await UserModel.findById(id);
+        if (!user) return res.status(400).send({ status: false, msg: "User not found" });
+
+        const randomOTP = Math.floor(1000 + Math.random() * 9000);
+
+        const updatedUser = await UserModel.findByIdAndUpdate(
+            id,
+            { $set: { 'verification.user.userOTP': randomOTP } },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(500).send({ status: false, msg: "Failed to update OTP" });
+        }
+
+        otpVerificationUser(updatedUser.name, updatedUser.email, randomOTP);
+
+        res.status(200).send({ status: true, msg: "OTP sent successfully" });
+    } catch (e) {
+        console.error(e);
+        errorHandlingdata(e, res);
+    }
+};
 
 
+exports.userDelete = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const user = await UserModel.findById(id);
+        if (!user) return res.status(404).send({ status: false, msg: "User not found" });
+
+        const randomOTP = Math.floor(1000 + Math.random() * 9000);
+
+        const updatedUser = await UserModel.findByIdAndUpdate(
+            id,
+            { $set: { 'Verification.user.isDeleted': true } },
+            { new: true }
+        );
+
+
+
+        if (!updatedUser) {
+            return res.status(500).send({ status: false, msg: "Failed to delete user" });
+        }
+
+        // Debug: check if field is updated
+        console.log("isDeleted:", updatedUser.Verification?.user?.isDeleted);
+
+        otpVerificationUser(updatedUser.name, updatedUser.email, randomOTP);
+
+        res.status(200).send({ status: true, msg: "Account deleted successfully" });
+    } catch (e) {
+        console.error(e);
+        errorHandlingdata(e, res);
+    }
+};
+
+exports.userUpdated = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const randomOTP = Math.floor(1000 + Math.random() * 9000);
+
+        const data = req.body
+        const { name } = data
+
+        const user = await UserModel.findById(id);
+        if (!user) return res.status(404).send({ status: false, msg: "User not found" });
+
+
+        const DB = await UserModel.findByIdAndUpdate(
+            id,
+            { $set: { name } },
+            { new: true }
+        );
+
+        if (!DB) {
+            return res.status(500).send({ status: false, msg: "Failed to update user" });
+        }
+
+        const DBDATA = {
+            name: DB.name,
+            email: DB.email,
+            _id: DB._id
+        };
+
+        console.log("isUpdated:", DB.Verification?.user?.isUpdated);
+
+        otpVerificationUser(DB.name, DB.email, randomOTP);
+
+
+        res.status(200).send({ status: true, msg: "Account updated successfully", data: DBDATA });
+    } catch (e) {
+        console.error(e);
+        errorHandlingdata(e, res);
+    }
+};
+
+exports.changePassword = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const data = req.body
+
+        const { currentPassword, newPassword } = data
+
+        if (currentPassword == newPassword) return res.status(400).send({ status: false, msg: "not provide same password " })
+
+
+        const randomOTP = Math.floor(1000 + Math.random() * 9000);
+
+
+
+        const user = await UserModel.findById(id);
+        if (!user) return res.status(404).send({ status: false, msg: "User not found" });
+
+        const bcryptPass = await bcrypt.compare(currentPassword, user.password);
+        if (!bcryptPass) return res.status(400).send({ status: false, msg: "Wrong Password" })
+
+        const hashPassword = await bcrypt.hash(newPassword, 10);
+
+        await UserModel.findByIdAndUpdate({_id:id},{$set:{password:hashPassword}})
+
+        res.status(200).send({ status: true, msg: "Password updated successfully" });
+    } catch (e) {
+        console.error(e);
+        errorHandlingdata(e, res);
+    }
+};
 
