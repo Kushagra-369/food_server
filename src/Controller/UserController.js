@@ -1,8 +1,9 @@
 const UserModel = require("../Model/UserModel");
-const { otpVerificationUser } = require("../Mail/UserMail")
+const { otpVerificationUser, changeEmail } = require("../Mail/UserMail")
 const { errorHandlingdata } = require('../Error/ErrorHandling')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt');
+const { UploadProfileImg, DeleteProfileImg } = require("../Images/UploadImage")
 const dotenv = require("dotenv")
 dotenv.config()
 
@@ -68,7 +69,6 @@ exports.createuser = async (req, res) => {
     }
 };
 
-
 exports.UserOtpVerify = async (req, res) => {
     try {
 
@@ -108,7 +108,7 @@ exports.LogInUser = async (req, res) => {
         const adminVerification = CheckUser.Verification?.admin || {};
 
         const comparePass = await bcrypt.compare(password, CheckUser.password)
-        console.log(comparePass);
+
         if (!comparePass) return res.status(400).send({ status: false, msg: "Wrong Password" })
 
         if (CheckUser) {
@@ -269,7 +269,7 @@ exports.changePassword = async (req, res) => {
 
         const hashPassword = await bcrypt.hash(newPassword, 10);
 
-        await UserModel.findByIdAndUpdate({_id:id},{$set:{password:hashPassword}})
+        await UserModel.findByIdAndUpdate({ _id: id }, { $set: { password: hashPassword } })
 
         res.status(200).send({ status: true, msg: "Password updated successfully" });
     } catch (e) {
@@ -278,3 +278,145 @@ exports.changePassword = async (req, res) => {
     }
 };
 
+exports.UploadProfileImg = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const file = req.file;
+
+        if (!file) return res.status(400).send({ status: false, msg: "Please Provide File" });
+
+        const CheckUser = await UserModel.findById(id);
+        if (!CheckUser) return res.status(400).send({ status: false, msg: "User not Found" });
+
+        // Delete previous image if exists
+        if (CheckUser.profileIMG) {
+            await DeleteProfileImg(CheckUser.profileIMG.public_id);
+        }
+
+        // Upload new image
+        const imgURL = await UploadProfileImg(file.path);
+
+        const updatedUser = await UserModel.findByIdAndUpdate(
+            id,
+            { $set: { profileIMG: imgURL } },
+            { new: true }
+        );
+
+        const DB = {
+            _id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            profileIMG: updatedUser.profileIMG
+        };
+
+        res.status(200).send({ status: true, msg: "Profile Updated successfully", data: DB });
+    } catch (e) {
+        errorHandlingdata(e, res);
+    }
+}
+
+exports.newEmail = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { password, newEmail } = req.body;
+
+        if (!id || !password || !newEmail) {
+            return res.status(400).send({ status: false, msg: "Missing required fields" });
+        }
+
+        // Find the user by ID
+        const user = await UserModel.findById(id);
+        if (!user) return res.status(404).send({ status: false, msg: "User not found" });
+
+        // Check if new email is already in use
+        const emailExists = await UserModel.findOne({ email: newEmail, role: 'user' });
+        if (emailExists) {
+            return res.status(400).send({ status: false, msg: "Email already registered" });
+        }
+
+        // Check password
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) {
+            return res.status(400).send({ status: false, msg: "Wrong password" });
+        }
+
+        // Account status checks
+        const userVerification = user.Verification?.user || {};
+        const adminVerification = user.Verification?.admin || {};
+
+        if (userVerification.isDeleted) {
+            return res.status(400).send({ status: false, msg: "User already deleted" });
+        }
+
+        if (!adminVerification?.isAccountActive) {
+            return res.status(400).send({ status: false, msg: "User is blocked by admin" });
+        }
+
+        // Generate OTP and expiry time
+        const randomOTP = Math.floor(1000 + Math.random() * 9000);
+        const expireOTPAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes validity
+
+        // Update user document with new email OTP info
+        await UserModel.findByIdAndUpdate(
+            id,
+            {
+                $set: {
+                    "Verification.email.newEmail": newEmail,
+                    "Verification.email.userOTP": randomOTP,
+                    "Verification.email.expireOTP": expireOTPAt
+                }
+            },
+            { new: true }
+        );
+
+        // Send email with OTP
+        changeEmail(user.name, newEmail, randomOTP);
+
+        return res.status(200).send({ status: true, msg: "OTP sent to new email successfully" });
+
+    } catch (e) {
+        errorHandlingdata(e, res);
+    }
+};
+
+
+exports.newEmailVerify = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const { id } = req.params;
+
+    if (!otp || !id) {
+      return res.status(400).send({ status: false, msg: "Missing required fields" });
+    }
+
+    const user = await UserModel.findById(id);
+    if (!user) {
+      return res.status(404).send({ status: false, msg: "User not found" });
+    }
+
+    const emailVerification = user.Verification?.email;
+    if (!emailVerification || !emailVerification.UserOTP || !emailVerification.expireOTP || !emailVerification.newEmail) {
+      return res.status(400).send({ status: false, msg: "Email change request not found or already verified" });
+    }
+
+    // Check if OTP is expired
+    const now = new Date();
+    if (now >= emailVerification.expireOTP) {
+      return res.status(400).send({ status: false, msg: "OTP has expired" });
+    }
+
+    // Check if OTP matches
+    if (String(emailVerification.userOTP) !== String(otp)) {
+      return res.status(400).send({ status: false, msg: "Invalid OTP" });
+    }
+
+    // Update email and clear OTP fields
+    user.email = emailVerification.newEmail;
+    user.Verification.email = {}; // clear OTP info
+    await user.save();
+
+    return res.status(200).send({ status: true, msg: "Email updated successfully", data: { email: user.email } });
+  } catch (e) {
+    errorHandlingdata(e, res);
+  }
+};

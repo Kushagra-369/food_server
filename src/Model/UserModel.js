@@ -4,9 +4,9 @@ const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema(
     {
-        profile_image: {
+        profileIMG: {
             type: {
-                url: { type: String, required: true, trim: true },
+                secure_url: { type: String, required: true, trim: true },
                 public_id: { type: String, required: true, trim: true }
             }
         },
@@ -30,6 +30,14 @@ const userSchema = new mongoose.Schema(
             trim: true
         },
         Verification: {
+
+            email: {
+                newEmail: { type: String, trim: true },
+                UserOTP: { type: String, default: 0 },
+                expireOTP: { type: Date, default: null }
+
+            },
+
             user: {
                 UserOTP: { type: String, default: 0 },
                 isDeleted: { type: Boolean, default: false },

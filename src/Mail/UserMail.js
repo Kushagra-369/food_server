@@ -72,3 +72,44 @@ exports.otpVerificationAdmin = async (name, email, randomOTP) => {
     console.error("❌ Failed to send OTP email:", e);
   }
 };
+
+exports.changeEmail = async (name, email, randomOTP) => {
+  try {
+    const info = await transporter.sendMail({
+      from: '"Your App Name" <kushagra100chhabra@gmail.com>',
+      to: email,
+      subject: "📧 Confirm Your New Email Address – OTP Verification",
+      text: `Hi ${name},
+
+We received a request to change the email address associated with your account.
+
+Your One-Time Password (OTP) to verify this change is: ${randomOTP}
+
+This OTP is valid for 10 minutes.
+
+If you did not request this change, please ignore this email or contact support.
+
+– The Your App Name Team`,
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
+          <h2 style="color: #2c3e50;">Hi ${name} 👋</h2>
+          <p>We received a request to change the email address associated with your account.</p>
+          <p>To confirm this change, please use the OTP below:</p>
+          <div style="background-color: #f9f9f9; padding: 15px 25px; font-size: 24px; font-weight: bold; border-radius: 6px; display: inline-block; margin: 15px 0;">
+            ${randomOTP}
+          </div>
+          <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+          <p>If you did not request this, please secure your account and contact our support team immediately.</p>
+          <hr style="margin: 30px 0;"/>
+          <p style="font-size: 14px; color: #888;">This is an automated message. Please do not reply.</p>
+          <p style="font-size: 14px; color: #888;">– The Your App Name Team</p>
+        </div>
+      `
+    });
+
+    console.log("✅ Change Email OTP sent successfully:", info.messageId);
+  } catch (e) {
+    console.error("❌ Failed to send Change Email OTP:", e);
+  }
+};
+
