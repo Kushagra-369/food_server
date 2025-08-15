@@ -69,13 +69,13 @@ exports.getAllUserData = async (req, res) => {
         const isDeleted = req.params.isDeleted
         if (type == 'all') {
             if (isDeleted == 'true') {
-                const DB = await UserModel.find({ role: 'user','Verification.user.isDeleted':true  })
-                if(DB.length ==0) return res.status(400).send({ status: false, msg: "Data not Found" })
+                const DB = await UserModel.find({ role: 'user', 'Verification.user.isDeleted': true })
+                if (DB.length == 0) return res.status(400).send({ status: false, msg: "Data not Found" })
                 if (!DB) return res.status(400).send({ status: false, msg: "Data not Found" })
                 return res.status(200).send({ status: true, msg: "Successfully Got All User Data", data: DB })
             }
             else {
-                const DB = await UserModel.find({ role: 'user','Verification.user.isDeleted':false })
+                const DB = await UserModel.find({ role: 'user', 'Verification.user.isDeleted': false })
                 if (!DB) return res.status(400).send({ status: false, msg: "Data not Found" })
                 return res.status(200).send({ status: true, msg: "Successfully Got All User Data", data: DB })
             }
@@ -89,3 +89,51 @@ exports.getAllUserData = async (req, res) => {
         errorHandlingdata(e, res)
     }
 }
+
+exports.AdminOtpVerify = async (req, res) => {
+    try {
+        const otp = req.body.otp;
+        const id = req.params.id;
+
+        if (!otp) {
+            return res.status(400).send({ status: false, msg: "Please provide OTP" });
+        }
+
+        const user = await UserModel.findById(id);
+        if (!user || user.role !== "admin") {
+            return res.status(404).send({ status: false, msg: "Admin user not found" });
+        }
+
+        const dbOtp = user.Verification?.admin?.AdminOTP?.toString();
+        const otpExpiry = user.Verification?.admin?.expireOTP;
+
+        // Check if OTP matches
+        if (!dbOtp || dbOtp !== otp.toString()) {
+            return res.status(400).send({ status: false, msg: "Incorrect OTP" });
+        }
+
+        // Check if OTP is expired
+        if (!otpExpiry || new Date() > new Date(otpExpiry)) {
+            return res.status(400).send({ status: false, msg: "OTP has expired" });
+        }
+
+        // Update admin verification status
+        await UserModel.findByIdAndUpdate(
+            id,
+            {
+                $set: {
+                    'Verification.admin.isOtpVerified': "1" // or true if you change schema to Boolean
+                }
+            },
+            { new: true }
+        );
+
+        return res.status(200).send({ status: true, msg: "Admin verified successfully" });
+
+    } catch (e) {
+        errorHandlingdata(e, res);
+    }
+};
+
+
+

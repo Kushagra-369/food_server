@@ -124,8 +124,10 @@ exports.LogInUser = async (req, res) => {
             if (!adminVerification.isAccountActive) return res.status(400).send({ status: false, msg: 'User is blocked by admin' });
         }
 
+        const DBDATA = { profileIMG: CheckUser.profileIMG, name: CheckUser.name, email: CheckUser.email }
+
         const token = jwt.sign({ userId: CheckUser._id }, process.env.JWT_User_SECRET_KEY, { expiresIn: '24h' })
-        return res.status(200).send({ status: true, msg: "Login Successfully", data: { token, id: CheckUser._id } })
+        return res.status(200).send({ status: true, msg: "Login Successfully", data: { token, id: CheckUser._id, DBDATA } })
     }
 
     catch (e) {
@@ -282,6 +284,7 @@ exports.UploadProfileImg = async (req, res) => {
     try {
         const id = req.params.id;
         const file = req.file;
+        console.log(file);
 
         if (!file) return res.status(400).send({ status: false, msg: "Please Provide File" });
 
@@ -362,7 +365,7 @@ exports.newEmail = async (req, res) => {
             {
                 $set: {
                     "Verification.email.newEmail": newEmail,
-                    "Verification.email.userOTP": randomOTP,
+                    "Verification.email.UserOTP": randomOTP,
                     "Verification.email.expireOTP": expireOTPAt
                 }
             },
@@ -379,44 +382,44 @@ exports.newEmail = async (req, res) => {
     }
 };
 
-
 exports.newEmailVerify = async (req, res) => {
-  try {
-    const { otp } = req.body;
-    const { id } = req.params;
+    try {
+        const data = req.body
+        const otp = req.body.otp;
+        const id = req.params.id;
+        console.log(otp, id)
 
-    if (!otp || !id) {
-      return res.status(400).send({ status: false, msg: "Missing required fields" });
+        const randomOTP = Math.floor(1000 + Math.random() * 9000)
+
+        const UpdateOTP = await UserModel.findOneAndUpdate(
+            { email: data.email, 'Verification.user.isDeleted': false, 'Verification.admin.isAccountActive': true },
+            {
+                $set: {
+                    "Verification.user.UserOTP": randomOTP,
+                    // "Verification.user.expireOTP": expireOTPAt
+                }
+            },
+            { new: true }
+        );
+
+        const CheckId = await UserModel.findById(id);
+        if (!CheckId) return res.status(400).send({ status: false, msg: "User not found" });
+
+        const nowTime = Math.floor((Date.now()) / 1000);
+        const DBTime = CheckId.Verification.email.expireTime
+
+        if (nowTime >= DBTime) return res.status(400).send({ status: false, msg: "OTP Expired" });
+
+        if (otp == CheckId.Verification.email.UserOTP) {
+            await UserModel.findByIdAndUpdate({ _id: id },
+                { $set: { email: CheckId.Verification.email.newEmail, 'Verification.email.UserOTP': randomOTP } });
+            res.status(200).send({ status: true, msg: "Email Verify successfully" });
+        }
+        else {
+            res.status(400).send({ status: false, msg: "Wrong OTP" });
+        }
+
+
     }
-
-    const user = await UserModel.findById(id);
-    if (!user) {
-      return res.status(404).send({ status: false, msg: "User not found" });
-    }
-
-    const emailVerification = user.Verification?.email;
-    if (!emailVerification || !emailVerification.UserOTP || !emailVerification.expireOTP || !emailVerification.newEmail) {
-      return res.status(400).send({ status: false, msg: "Email change request not found or already verified" });
-    }
-
-    // Check if OTP is expired
-    const now = new Date();
-    if (now >= emailVerification.expireOTP) {
-      return res.status(400).send({ status: false, msg: "OTP has expired" });
-    }
-
-    // Check if OTP matches
-    if (String(emailVerification.userOTP) !== String(otp)) {
-      return res.status(400).send({ status: false, msg: "Invalid OTP" });
-    }
-
-    // Update email and clear OTP fields
-    user.email = emailVerification.newEmail;
-    user.Verification.email = {}; // clear OTP info
-    await user.save();
-
-    return res.status(200).send({ status: true, msg: "Email updated successfully", data: { email: user.email } });
-  } catch (e) {
-    errorHandlingdata(e, res);
-  }
-};
+    catch (e) { errorHandlingdata(e, res) }
+}

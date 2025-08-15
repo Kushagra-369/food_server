@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require("multer")
 
 const { createuser ,  getUserById , UserOtpVerify , LogInUser,ResendOTP , userDelete , userUpdated,changePassword,UploadProfileImg,newEmail,newEmailVerify} = require("../Controller/UserController");
-const {LogInAdmin,getAllUserData} = require("../Controller/AdminController")
+const {LogInAdmin,getAllUserData , AdminOtpVerify } = require("../Controller/AdminController")
 const {authenticate} = require("../middleware/AdminAuth")
 const {UserAuthenticate , UserAuthorize} = require("../middleware/UserAuth")
 
@@ -24,5 +24,7 @@ router.post('/newEmailVerify/:id', UserAuthenticate, UserAuthorize, newEmailVeri
 
 router.post('/LogInAdmin', LogInAdmin);
 router.get('/getAllUserData/:type/:isDeleted',authenticate, getAllUserData)
+router.post('/admin_otp_verify/:id', AdminOtpVerify);
+// router.put('/adminUpdated/:id', UserAuthenticate, UserAuthorize, adminUpdated);
 
 module.exports = router; 

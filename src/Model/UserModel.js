@@ -48,10 +48,11 @@ const userSchema = new mongoose.Schema(
             },
             admin: {
                 isAccountActive: { type: Boolean, default: true },
-                AdminOTP: { type: String, default: 0 },
-                isOtpVerified: { type: String, default: 0 },
-
+                AdminOTP: { type: String, default: "0" },
+                isOtpVerified: { type: String, default: "0" }, // Or change to Boolean if preferred
+                expireOTP: { type: Date, default: null } // ✅ ADD THIS
             }
+
         },
 
         role: { type: String, enum: ['user', 'admin'], required: true, trim: true }
