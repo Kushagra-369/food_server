@@ -17,6 +17,9 @@ exports.LogInAdmin = async (req, res) => {
             return res.status(400).send({ status: false, msg: "Admin user not found" });
         }
 
+        const AdminDB = {
+            profileIMG: user.profileIMG, name: user.name, email: user.email
+        }
         // 2. Validate password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
@@ -37,6 +40,8 @@ exports.LogInAdmin = async (req, res) => {
                 }
             }
         );
+
+        
 
         // 5. Send OTP via email
         await otpVerificationAdmin(user.name, user.email, otp);
@@ -107,22 +112,19 @@ exports.AdminOtpVerify = async (req, res) => {
         const dbOtp = user.Verification?.admin?.AdminOTP?.toString();
         const otpExpiry = user.Verification?.admin?.expireOTP;
 
-        // Check if OTP matches
         if (!dbOtp || dbOtp !== otp.toString()) {
             return res.status(400).send({ status: false, msg: "Incorrect OTP" });
         }
 
-        // Check if OTP is expired
         if (!otpExpiry || new Date() > new Date(otpExpiry)) {
             return res.status(400).send({ status: false, msg: "OTP has expired" });
         }
 
-        // Update admin verification status
         await UserModel.findByIdAndUpdate(
             id,
             {
                 $set: {
-                    'Verification.admin.isOtpVerified': "1" // or true if you change schema to Boolean
+                    'Verification.admin.isOtpVerified': "1" 
                 }
             },
             { new: true }
@@ -134,6 +136,4 @@ exports.AdminOtpVerify = async (req, res) => {
         errorHandlingdata(e, res);
     }
 };
-
-
 
