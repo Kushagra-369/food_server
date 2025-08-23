@@ -15,3 +15,27 @@ exports.authenticate = (req, res, next) => {
 
 }
 
+exports.AdminAuthorize = (req, res, next) => {
+    try {
+        const { userId, role } = req.user;  // decoded from JWT
+        const id = req.params.id;
+
+        if (!id) {
+            return res.status(400).send({ status: false, msg: "id must be present" });
+        }
+
+        // Allow admin to bypass id check
+        if (role === "admin") {
+            return next();
+        }
+
+        // For normal users, enforce self-access only
+        if (id != userId) {
+            return res.status(403).send({ status: false, msg: "unauthorized user" });
+        }
+
+        next();
+    } catch (e) {
+        errorHandlingdata(e, res);
+    }
+};

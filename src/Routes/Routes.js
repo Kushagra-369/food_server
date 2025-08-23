@@ -3,8 +3,8 @@ const router = express.Router();
 const multer = require("multer")
 
 const { createuser ,  getUserById , UserOtpVerify , LogInUser,ResendOTP , userDelete , userUpdated,changePassword,UploadProfileImg,newEmail,newEmailVerify} = require("../Controller/UserController");
-const {LogInAdmin,getAllUserData , AdminOtpVerify } = require("../Controller/AdminController")
-const {authenticate} = require("../middleware/AdminAuth")
+const {LogInAdmin,getAllUserData , AdminOtpVerify, UploadAdminProfileImg } = require("../Controller/AdminController")
+const {authenticate,AdminAuthorize} = require("../middleware/AdminAuth")
 const {UserAuthenticate , UserAuthorize} = require("../middleware/UserAuth")
 
 const upload = multer({storage:multer.diskStorage({})})
@@ -23,8 +23,10 @@ router.post('/newEmailVerify/:id', UserAuthenticate, UserAuthorize, newEmailVeri
 
 
 router.post('/LogInAdmin', LogInAdmin);
-router.get('/getAllUserData/:type/:isDeleted',authenticate, getAllUserData)
+router.get('/getAllUserData/:type/:isDeleted',authenticate, AdminAuthorize,getAllUserData)
 router.post('/admin_otp_verify/:id', AdminOtpVerify);
+router.put('/UploadAdminProfileImg/:id', upload.single("profileIMG"), authenticate, AdminAuthorize, UploadAdminProfileImg);
+
 // router.put('/adminUpdated/:id', UserAuthenticate, UserAuthorize, adminUpdated);
 
 module.exports = router; 

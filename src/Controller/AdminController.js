@@ -120,20 +120,75 @@ exports.AdminOtpVerify = async (req, res) => {
             return res.status(400).send({ status: false, msg: "OTP has expired" });
         }
 
+        // Mark verified
         await UserModel.findByIdAndUpdate(
             id,
-            {
-                $set: {
-                    'Verification.admin.isOtpVerified': "1" 
-                }
-            },
+            { $set: { 'Verification.admin.isOtpVerified': "1" } },
             { new: true }
         );
 
-        return res.status(200).send({ status: true, msg: "Admin verified successfully" });
+        // Generate fresh JWT
+        const token = jwt.sign(
+            { userId: user._id },
+            process.env.JWT_Admin_SECRET_KEY,
+            { expiresIn: "24h" }
+        );
+
+        return res.status(200).send({
+            status: true,
+            msg: "Admin verified successfully",
+            data: {
+                id: user._id,
+                token,
+                name: user.name,
+                email: user.email,
+                profileIMG: user.profileIMG
+            }
+        });
+    } catch (e) {
+        errorHandlingdata(e, res);
+    }
+};
+
+exports.UploadAdminProfileImg = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).send({ status: false, msg: "Please provide a profile image" });
+        }
+
+        // ✅ Find only admin users
+        const admin = await UserModel.findOne({ _id: id, role: "admin" });
+        if (!admin) {
+            return res.status(404).send({ status: false, msg: "Admin not found" });
+        }
+
+        // ✅ Delete old image if exists
+        if (admin.profileIMG?.public_id) {
+            await DeleteProfileImg(admin.profileIMG.public_id);
+        }
+ 
+        // ✅ Upload new image to Cloud
+        const imgURL = await UploadProfileImg(file.path);
+
+        // ✅ Update admin profile with new image
+        const updatedAdmin = await UserModel.findByIdAndUpdate(
+            id,
+            { $set: { profileIMG: imgURL } },
+            { new: true, select: "_id name email profileIMG role" }
+        );
+
+        return res.status(200).send({
+            status: true,
+            msg: "Admin profile image updated successfully",
+            data: updatedAdmin
+        });
 
     } catch (e) {
         errorHandlingdata(e, res);
     }
 };
+
 
