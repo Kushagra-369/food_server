@@ -3,6 +3,7 @@ const { otpVerificationAdmin } = require("../Mail/UserMail")
 const { errorHandlingdata } = require('../Error/ErrorHandling')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt');
+const { UploadProfileImg, DeleteProfileImg } = require("../Images/UploadImage")
 const dotenv = require("dotenv")
 dotenv.config()
 
@@ -41,7 +42,7 @@ exports.LogInAdmin = async (req, res) => {
             }
         );
 
-        
+
 
         // 5. Send OTP via email
         await otpVerificationAdmin(user.name, user.email, otp);
@@ -169,7 +170,7 @@ exports.UploadAdminProfileImg = async (req, res) => {
         if (admin.profileIMG?.public_id) {
             await DeleteProfileImg(admin.profileIMG.public_id);
         }
- 
+
         // ✅ Upload new image to Cloud
         const imgURL = await UploadProfileImg(file.path);
 
@@ -177,18 +178,26 @@ exports.UploadAdminProfileImg = async (req, res) => {
         const updatedAdmin = await UserModel.findByIdAndUpdate(
             id,
             { $set: { profileIMG: imgURL } },
-            { new: true, select: "_id name email profileIMG role" }
-        );
+            { new: true }
+        ).select("_id name email profileIMG role"); // <-- FIX
 
         return res.status(200).send({
             status: true,
             msg: "Admin profile image updated successfully",
-            data: updatedAdmin
+            data: {
+                id: updatedAdmin._id,
+                name: updatedAdmin.name,
+                email: updatedAdmin.email,
+                role: updatedAdmin.role,
+                profileIMG: updatedAdmin.profileIMG // <- keep same casing
+            }
         });
+
 
     } catch (e) {
         errorHandlingdata(e, res);
     }
 };
+
 
 

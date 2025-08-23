@@ -1,23 +1,28 @@
 const { errorHandlingdata } = require('../Error/ErrorHandling')
 const jwt = require('jsonwebtoken')
+
 exports.authenticate = (req, res, next) => {
     try {
-        const token = req.headers["x-api-key"]
+        const token = req.headers["x-api-key"] || req.headers["authorization"]?.split(" ")[1];
 
-        console.log(req)
-        console.log(token)
-        if (!token) { return res.status(400).send({ status: false, msg: "Token must be present" }) }
-        const decodedToken = jwt.verify(token, process.env.JWT_Admin_SECRET_KEY)
+        if (!token) {
+            return res.status(400).send({ status: false, msg: "Token must be present" });
+        }
 
-        next()
+        const decodedToken = jwt.verify(token, process.env.JWT_Admin_SECRET_KEY);
+
+        // attach decoded token to req.user
+        req.user = decodedToken;
+
+        next();
+    } catch (e) {
+        errorHandlingdata(e, res);
     }
-    catch (e) { errorHandlingdata(e, res) }
-
-}
+};
 
 exports.AdminAuthorize = (req, res, next) => {
     try {
-        const { userId, role } = req.user;  // decoded from JWT
+        const { userId, role } = req.user;  // now this will exist
         const id = req.params.id;
 
         if (!id) {
