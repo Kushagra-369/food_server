@@ -176,7 +176,6 @@ exports.ResendOTP = async (req, res) => {
     }
 };
 
-
 exports.userDelete = async (req, res) => {
     try {
         const id = req.params.id;
