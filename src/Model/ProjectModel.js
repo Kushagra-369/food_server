@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
     {
+        customerName: {type: String,required: [true, "Customer name is required"],trim: true,minlength: [2, "Customer name must be at least 2 characters"],maxlength: [100, "Customer name must be less than 100 characters"]}, 
         name: {type: String,required: [true, "Product name is required"],trim: true,minlength: [2, "Product name must be at least 2 characters"],maxlength: [100, "Product name must be less than 100 characters"]},
         description: {type: String,required: [true, "Description is required"],trim: true,maxlength: [2000, "Description must be less than 2000 characters"]},
         images: [
@@ -10,15 +11,16 @@ const productSchema = new mongoose.Schema(
                 public_id: { type: String, required: true, trim: true }
             }
         ],
+        mode: {type: String,enum: ["Online", "Offline","Pack"],required: [true, "Mode is required"]},
         price: {type: Number,required: [true, "Price is required"],min: [0, "Price cannot be negative"]},
         discount: {type: Number,default: 0,min: [0, "Discount cannot be negative"],max: [100, "Discount cannot exceed 100%"]},
-        category: {type: String,required: [true, "Category is required"],enum: ["Pizza", "Burger", "Pasta", "Drinks", "Dessert", "Indian" ],trim: true},
+        category: {type: String,required: [true, "Category is required"],enum: ["pizza", "burger", "pasta", "drinks", "dessert", "indian thali"],trim: true},
         subCategory: {type: String,trim: true}, // Example: "Veg Pizza", "Non-Veg Burger"
         tags: {type: [String],default: [],trim: true},
         variants: [
             {
                 size: { type: String, enum: ["Small", "Medium", "Large"], trim: true },
-                extraPrice: { type: Number, default: 0, min: 0 }
+                pricePerPiece: { type: Number, default: 0, min: 0 }
             }
         ],
         ingredients: {type: [String],default: []}, // Example: ["Cheese", "Tomato Sauce", "Olives"]
@@ -43,4 +45,3 @@ const productSchema = new mongoose.Schema(
 
 module.exports = mongoose.model("Product", productSchema);
 
-// is deleted , 
