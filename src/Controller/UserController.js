@@ -8,66 +8,70 @@ const dotenv = require("dotenv")
 dotenv.config()
 
 exports.createuser = async (req, res) => {
-    try {
-        const data = req.body;
+  try {
+    const data = req.body;
 
-        if (Object.keys(data).length === 0) { return res.status(400).send({ status: false, msg: "A value is required in this field." }); }
-
-        const randomOTP = Math.floor(1000 + Math.random() * 9000)
-
-        const Verification = {}
-        Verification.user = {}
-        const expireOTPAt = new Date(Date.now() + 5 * 60 * 1000);
-
-        const CheckUser = await UserModel.findOneAndUpdate(
-            { email: data.email },
-            {
-                $set: {
-                    "Verification.user.UserOTP": randomOTP,
-                    "Verification.user.expireOTP": expireOTPAt
-                }
-            },
-            { new: true }
-        );
-        if (CheckUser) {
-            console.log(CheckUser);
-            const DBDATABASE = { name: CheckUser.name, email: CheckUser.email, _id: CheckUser._id }
-
-            const userVerification = CheckUser.Verification?.user || {};
-            const adminVerification = CheckUser.Verification?.admin || {};
-
-            const { isDeleted, isVerify, isAccountActive } = Verification
-            if (userVerification.isDeleted) return res.status(400).send({ status: false, msg: 'User already deleted' });
-            if (userVerification.isVerify) return res.status(400).send({ status: false, msg: 'Account already verified, please login' });
-            if (!adminVerification.isAccountActive) return res.status(400).send({ status: false, msg: 'User is blocked by admin' });
-
-            otpVerificationUser(CheckUser.name, CheckUser.email, randomOTP);
-            return res.status(200).send({ status: true, msg: 'OTP sent successfully', data: DBDATABASE });
-
-        }
-
-        data.role = 'user';
-        data.Verification = {
-            user: {
-                UserOTP: randomOTP,
-                expireOTP: expireOTPAt,
-            },
-        };
-
-
-        const newUser = await UserModel.create(data);
-
-        const newDB = { name: newUser.name, email: newUser.email, _id: newUser._id }
-
-        return res.status(201).send({ status: true, msg: 'User created successfully', data: newDB });
-
-    } catch (e) {
-        return res.status(500).send({
-            status: false,
-            msg: e.message
-        });
+    if (Object.keys(data).length === 0) {
+      return res.status(400).send({ status: false, msg: "A value is required in this field." });
     }
+
+    const randomOTP = Math.floor(1000 + Math.random() * 9000);
+    const expireOTPAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    // Check if user already exists
+    const CheckUser = await UserModel.findOneAndUpdate(
+      { email: data.email },
+      {
+        $set: {
+          "Verification.user.UserOTP": randomOTP,
+          "Verification.user.expireOTP": expireOTPAt
+        }
+      },
+      { new: true }
+    );
+
+    if (CheckUser) {
+      const DBDATABASE = { name: CheckUser.name, email: CheckUser.email, _id: CheckUser._id };
+
+      const userVerification = CheckUser.Verification?.user || {};
+      const adminVerification = CheckUser.Verification?.admin || {};
+
+      if (userVerification.isDeleted) return res.status(400).send({ status: false, msg: 'User already deleted' });
+      if (userVerification.isVerify) return res.status(400).send({ status: false, msg: 'Account already verified, please login' });
+      if (!adminVerification.isAccountActive) return res.status(400).send({ status: false, msg: 'User is blocked by admin' });
+
+      // ✅ Send OTP email
+      await otpVerificationUser(CheckUser.name, CheckUser.email, randomOTP);
+
+      return res.status(200).send({ status: true, msg: 'OTP sent successfully', data: DBDATABASE });
+    }
+
+    // New user creation
+    data.role = 'user';
+    data.Verification = {
+      user: {
+        UserOTP: randomOTP,
+        expireOTP: expireOTPAt,
+      },
+    };
+
+    const newUser = await UserModel.create(data);
+
+    const newDB = { name: newUser.name, email: newUser.email, _id: newUser._id };
+
+    // ✅ Send OTP email for new user too
+    await otpVerificationUser(newUser.name, newUser.email, randomOTP);
+
+    return res.status(201).send({ status: true, msg: 'User created successfully, OTP sent', data: newDB });
+
+  } catch (e) {
+    return res.status(500).send({
+      status: false,
+      msg: e.message
+    });
+  }
 };
+
 
 exports.UserOtpVerify = async (req, res) => {
     try {
