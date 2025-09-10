@@ -9,10 +9,11 @@ exports.CreateProduct = async (req, res) => {
     const file = req.file;
 
     // parse JSON fields sent by frontend
-    if (data.variants) data.variants = JSON.parse(data.variants);
-    if (data.nutrition) data.nutrition = JSON.parse(data.nutrition);
-    if (data.tags) data.tags = JSON.parse(data.tags);
-    if (data.ingredients) data.ingredients = JSON.parse(data.ingredients);
+if (data.variants !== undefined) data.variants = JSON.parse(data.variants);
+if (data.nutrition !== undefined) data.nutrition = JSON.parse(data.nutrition);
+if (data.tags !== undefined) data.tags = JSON.parse(data.tags);
+if (data.ingredients !== undefined) data.ingredients = JSON.parse(data.ingredients);
+
 
     // map productName -> name
     if (data.productName) {
@@ -71,3 +72,20 @@ exports.GetAllProducts = async (req, res) => {
     errorHandlingdata(error, res);
   }
 };
+
+exports.GetByCategory = async (req, res) => {
+  try {
+    const category = req.params.category;
+
+    console.log(category) 
+      const allDB = await ProductModel.find({ category: category }).select({ createdAt: 0, updatedAt: 0, __v: 0 });
+      if (!allDB || allDB.length === 0)
+        return res.status(404).send({ status: false, msg: "No products found" });
+
+      return res.status(200).send({ status: true, msg: "All products fetched successfully", data: allDB });
+  
+  } catch (error) {
+    console.error("GetByCategory error:", error); // 👈 add log
+    errorHandlingdata(error, res);
+  }
+}; 

@@ -72,7 +72,6 @@ exports.createuser = async (req, res) => {
   }
 };
 
-
 exports.UserOtpVerify = async (req, res) => {
     try {
 

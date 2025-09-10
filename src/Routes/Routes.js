@@ -4,7 +4,7 @@ const multer = require("multer")
 
 const { createuser ,  getUserById , UserOtpVerify , LogInUser,ResendOTP , userDelete , userUpdated,changePassword,UploadProfileImg,newEmail,newEmailVerify} = require("../Controller/UserController");
 const {LogInAdmin,getAllUserData , AdminOtpVerify, UploadAdminProfileImg } = require("../Controller/AdminController")
-const {CreateProduct,GetAllProducts} = require("../Controller/ProductController")
+const {CreateProduct,GetAllProducts,GetByCategory} = require("../Controller/ProductController")
 const {authenticate,AdminAuthorize} = require("../middleware/AdminAuth")
 const {UserAuthenticate , UserAuthorize} = require("../middleware/UserAuth")
 
@@ -32,5 +32,5 @@ router.put('/UploadAdminProfileImg/:id', upload.single("profileIMG"), authentica
 
 router.post('/CreateProduct/:id', upload.single("productImg"), authenticate, AdminAuthorize, CreateProduct);
 router.get('/GetAllProducts/:type', GetAllProducts);
-module.exports = router; 
- 
+router.get('/GetByCategory/:category', GetByCategory);
+module.exports = router;

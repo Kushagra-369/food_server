@@ -17,18 +17,14 @@ const productSchema = new mongoose.Schema(
         category: {type: String,required: [true, "Category is required"],enum: ["pizza", "burger", "pasta", "drinks", "dessert", "indian thali"],trim: true},
         subCategory: {type: String,trim: true}, // Example: "Veg Pizza", "Non-Veg Burger"
         tags: {type: [String],default: [],trim: true},
-        variants: [
-            {
-                size: { type: String, enum: ["Small", "Medium", "Large"], trim: true },
-                pricePerPiece: { type: Number, default: 0, min: 0 }
-            }
-        ],
+        size: { type: String, enum: ["small", "medium", "large"], trim: true },
+        pricePerPiece: { type: Number, default: 0, min: 0 },        
         ingredients: {type: [String],default: []}, // Example: ["Cheese", "Tomato Sauce", "Olives"]
         nutrition: {calories: { type: Number, default: 0 },protein: { type: Number, default: 0 },carbs: { type: Number, default: 0 },fat: { type: Number, default: 0 }},
         preparationTime: {type: Number, default: 15},
         stock: {type: Number,required: [true, "Stock is required"],min: [0, "Stock cannot be negative"]},
         isAvailable: {type: Boolean,default: true},
-        ratings: {average: { type: Number, default: 0, min: 0, max: 5 },count: { type: Number, default: 0, min: 0 }},
+        rating: { type: Number, default: 0, min: 0, max: 5 },
         reviews: [
             {
                 user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
