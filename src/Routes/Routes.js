@@ -33,4 +33,6 @@ router.put('/UploadAdminProfileImg/:id', upload.single("profileIMG"), authentica
 router.post('/CreateProduct/:id', upload.single("productImg"), authenticate, AdminAuthorize, CreateProduct);
 router.get('/GetAllProducts/:type', GetAllProducts);
 router.get('/GetByCategory/:category', GetByCategory);
+
+
 module.exports = router;
