@@ -438,3 +438,8 @@ exports.getAllUsers = async (req, res) => {
     return res.status(500).send({ status: false, msg: e.message });
   }
 };
+
+
+
+// ✅ Get all reviews/suggestions
+
