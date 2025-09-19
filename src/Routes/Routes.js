@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer")
 
-const { createuser ,  getUserById , UserOtpVerify , LogInUser,ResendOTP , userDelete , userUpdated,changePassword,UploadProfileImg,newEmail,newEmailVerify,getAllUsers } = require("../Controller/UserController");
+const { createuser ,  getUserById , UserOtpVerify , LogInUser,ResendOTP , userDelete , userUpdated,changePassword,UploadProfileImg,newEmail,newEmailVerify,getAllUsers,getDeletedUsers } = require("../Controller/UserController");
 const {LogInAdmin,getAllUserData , AdminOtpVerify, UploadAdminProfileImg } = require("../Controller/AdminController")
 const {CreateProduct,GetAllProducts,GetByCategory ,CreateUserProduct } = require("../Controller/ProductController")
 const {authenticate,AdminAuthorize} = require("../middleware/AdminAuth")
@@ -23,6 +23,7 @@ router.put('/UploadProfileImg/:id', upload.single("profileIMG"), UserAuthenticat
 router.put('/newEmail/:id', UserAuthenticate, UserAuthorize, newEmail);
 router.post('/newEmailVerify/:id', UserAuthenticate, UserAuthorize, newEmailVerify);
 router.get("/getAllUsers", getAllUsers);
+router.get("/getDeletedUsers", getDeletedUsers);
 
 router.post('/LogInAdmin', LogInAdmin);
 router.get('/getAllUserData/:type/:isDeleted',authenticate, AdminAuthorize,getAllUserData)

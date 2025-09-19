@@ -439,6 +439,19 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+exports.getDeletedUsers = async (req, res) => {
+  try {
+    const users = await UserModel.find(
+      { role: "user", "Verification.user.isDeleted": true }, // only deleted users
+      { name: 1, email: 1, "Verification.user.deletedAt": 1 } // return extra info if needed
+    );
+    return res.status(200).send({ status: true, data: users });
+  } catch (e) {
+    return res.status(500).send({ status: false, msg: e.message });
+  }
+};
+
+
 
 
 // ✅ Get all reviews/suggestions
