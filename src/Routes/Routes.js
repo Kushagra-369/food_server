@@ -4,7 +4,7 @@ const multer = require("multer")
 
 const { createuser ,  getUserById , UserOtpVerify , LogInUser,ResendOTP , userDelete , userUpdated,changePassword,UploadProfileImg,newEmail,newEmailVerify,getAllUsers } = require("../Controller/UserController");
 const {LogInAdmin,getAllUserData , AdminOtpVerify, UploadAdminProfileImg } = require("../Controller/AdminController")
-const {CreateProduct,GetAllProducts,GetByCategory  } = require("../Controller/ProductController")
+const {CreateProduct,GetAllProducts,GetByCategory ,CreateUserProduct } = require("../Controller/ProductController")
 const {authenticate,AdminAuthorize} = require("../middleware/AdminAuth")
 const {UserAuthenticate , UserAuthorize} = require("../middleware/UserAuth")
 const { placeOrder , getAllOrders } = require("../Controller/OrderController");
@@ -32,6 +32,16 @@ router.put('/UploadAdminProfileImg/:id', upload.single("profileIMG"), authentica
 // router.put('/adminUpdated/:id', UserAuthenticate, UserAuthorize, adminUpdated);
 
 router.post('/CreateProduct/:id', upload.single("productImg"), authenticate, AdminAuthorize, CreateProduct);
+
+router.post(
+  '/CreateUserProduct/:id', 
+  upload.none(),             // <--- add this
+  UserAuthenticate, 
+  UserAuthorize, 
+  CreateUserProduct
+);
+
+
 router.get('/GetAllProducts/:type', GetAllProducts);
 router.get('/GetByCategory/:category', GetByCategory);
 

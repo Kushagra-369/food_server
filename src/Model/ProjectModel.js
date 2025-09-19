@@ -11,6 +11,7 @@ const productSchema = new mongoose.Schema(
                 public_id: { type: String, required: true, trim: true }
             }
         ],
+
         mode: {type: String,enum: ["Online", "Offline","Pack"],required: [true, "Mode is required"]},
         price: {type: Number,required: [true, "Price is required"],min: [0, "Price cannot be negative"]},
         discount: {type: Number,default: 0,min: [0, "Discount cannot be negative"],max: [100, "Discount cannot exceed 100%"]},
@@ -34,7 +35,9 @@ const productSchema = new mongoose.Schema(
             }
         ],
         createdBy: {type: mongoose.Schema.Types.ObjectId,ref: "User",required: true},
-        status: {type: String,enum: ["Draft", "Published", "Archived"],default: "Published"}
+        status: {type: String,enum: ["Draft", "Published", "Archived"],default: "Published"},
+        role: { type: String, enum: ['user', 'admin'], required: true, trim: true }
+
     },
     { timestamps: true }
 );

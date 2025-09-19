@@ -1,5 +1,6 @@
 const { errorHandlingdata } = require('../Error/ErrorHandling')
 const jwt = require('jsonwebtoken')
+
 exports.UserAuthenticate = (req, res, next) => {
     try {
         const token = req.headers["x-api-key"]

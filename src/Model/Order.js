@@ -10,6 +10,11 @@ const OrderSchema = new mongoose.Schema({
       quantity: Number,
     },
   ],
+    role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user"   // 🔑 all new users automatically get role = "user"
+  },
   totalPrice: { type: Number, required: true },
   status: { type: String, default: "pending" },
   createdAt: { type: Date, default: Date.now },
