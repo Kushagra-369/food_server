@@ -7,7 +7,7 @@ const {LogInAdmin,getAllUserData , AdminOtpVerify, UploadAdminProfileImg ,getAll
 const {CreateProduct,GetAllProducts,GetByCategory ,CreateUserProduct } = require("../Controller/ProductController")
 const {authenticate,AdminAuthorize} = require("../middleware/AdminAuth")
 const {UserAuthenticate , UserAuthorize} = require("../middleware/UserAuth")
-const { placeOrder , getAllOrders } = require("../Controller/OrderController");
+const { placeOrder , getAllOrders,getMyOrders } = require("../Controller/OrderController");
 
 const upload = multer({storage:multer.diskStorage({})})
 
@@ -52,5 +52,6 @@ router.get('/GetByCategory/:category', GetByCategory);
 // Routes.js
 router.post('/placeOrder', UserAuthenticate, placeOrder); // no id param needed
 router.get('/getAllOrders', authenticate, getAllOrders);
+router.get('/my-orders', UserAuthenticate, getMyOrders);
 
 module.exports = router;

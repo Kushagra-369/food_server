@@ -60,3 +60,23 @@ exports.getAllOrders = async (req, res) => {
     res.status(500).json({ success: false, msg: "Server error" });
   }
 };
+
+// Get logged-in user's orders
+exports.getMyOrders = async (req, res) => {
+  try {
+    const userId = req.user.userId; // decoded from token
+
+    if (!userId) {
+      return res.status(400).json({ success: false, msg: "User ID missing" });
+    }
+
+    const orders = await Order.find({ user: userId })
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error("Get my orders error:", error.message);
+    res.status(500).json({ success: false, msg: "Server error" });
+  }
+};
