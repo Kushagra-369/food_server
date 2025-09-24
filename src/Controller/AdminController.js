@@ -1,4 +1,5 @@
 const UserModel = require("../Model/UserModel");
+const Review = require("../Model/ReviewModel");
 const { otpVerificationAdmin } = require("../Mail/UserMail")
 const { errorHandlingdata } = require('../Error/ErrorHandling')
 const jwt = require('jsonwebtoken')
@@ -67,7 +68,7 @@ exports.LogInAdmin = async (req, res) => {
         errorHandlingdata(e, res);
     }
 };
-
+ 
 exports.getAllUserData = async (req, res) => {
     try {
 
@@ -199,6 +200,20 @@ exports.UploadAdminProfileImg = async (req, res) => {
     }
 };
 
+exports.getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find()
+      .populate("userId", "name email") // fetch user info
+      .sort({ createdAt: -1 }); // latest first
 
+    return res.status(200).send({
+      status: true,
+      message: "All reviews fetched successfully",
+      data: reviews,
+    });
+  } catch (err) {
+    return res.status(500).send({ status: false, message: err.message });
+  }
+};
 
 
